@@ -62,8 +62,3 @@ class raider_api:
             f'fields=mythic_plus_ranks,mythic_plus_recent_runs,mythic_plus_scores_by_season:current')
         # print(re.json())
         return re.json()
-
-
-if __name__ == '__main__':
-    r = raider_api()
-    r.get_player_mythic_stats("necrolords")
