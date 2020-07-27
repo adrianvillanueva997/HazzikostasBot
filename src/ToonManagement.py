@@ -4,12 +4,27 @@ import os
 
 
 class ToonManagement:
+    """
+    Public class that does all the character management stuff
+    """
+
     def __init__(self):
+        """
+        Class constructor
+        """
         self.__engine = create_engine(
             f"mysql+mysqldb://{os.getenv('db_username')}:{os.getenv('db_password')}@{os.getenv('db_hostname')}",
             encoding='utf-8')
 
-    def insert_toon(self, toon_name, user_id: str, user_name):
+    def insert_toon(self, toon_name: str, user_id: str, user_name: str):
+        """
+        Function that receives a toon name, user_id and username, the toon name is given from the command arg
+        and the user_id and user_name are received from Discord's api
+        :param toon_name:
+        :param user_id:
+        :param user_name:
+        :return:
+        """
         with self.__engine.connect() as conn:
             query = text('''INSERT INTO Discord_Bots.HK_Toons
                          (Toon_Name, User_ID, UserName)
@@ -22,6 +37,11 @@ class ToonManagement:
         return 0
 
     def get_toons_names(self):
+        """
+        Public function that gets the toons names from the database
+        Returns a dictionary with toons and the username of the user that registered the toon.
+        :return:
+        """
         with self.__engine.connect() as conn:
             query = text('''select Toon_Name, UserName, Added from Discord_Bots.HK_Toons''')
             results = conn.execute(query)
@@ -35,11 +55,21 @@ class ToonManagement:
             return data
 
     def delete_toon(self, toon_name: str):
+        """
+        Public function that deletes everything from certain user in the database
+        :param toon_name:
+        :return:
+        """
         with self.__engine.connect() as conn:
             query = text('''delete from Discord_Bots.HK_Toons where Toon_Name = :_toon_name''')
             conn.execute(query, _toon_name=toon_name)
 
     def get_toons_full_data(self):
+        """
+        Function to get all the relevant stats from all characters registered in the database.
+        Returns a dictionary with the info
+        :return:
+        """
         with self.__engine.connect() as conn:
             query = text('''select Toon_Name, _all, dps, tank, healer, tank,
              spec_0, spec_1, spec_2, spec_3, rank_overall,rank_class,rank_faction from Discord_Bots.HK_Toons''')
@@ -73,8 +103,25 @@ class ToonManagement:
                 data['faction'].append(result['rank_faction'])
             return data
 
-    def update_toon_info(self, toon_name, all, dps, healer, tank, spec_0, spec_1, spec_2, spec_3,
-                         rank_overall, rank_class, rank_faction):
+    def update_toon_info(self, toon_name: str, all: float, dps: float, healer: float, tank: float, spec_0: float,
+                         spec_1: float, spec_2: float, spec_3: float,
+                         rank_overall: float, rank_class: float, rank_faction: float):
+        """
+        Public function that receives stats from the character and updates all its values from the database.
+        :param toon_name:
+        :param all:
+        :param dps:
+        :param healer:
+        :param tank:
+        :param spec_0:
+        :param spec_1:
+        :param spec_2:
+        :param spec_3:
+        :param rank_overall:
+        :param rank_class:
+        :param rank_faction:
+        :return:
+        """
         with self.__engine.connect() as conn:
             query = text('''
             UPDATE Discord_Bots.HK_Toons

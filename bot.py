@@ -1,7 +1,15 @@
+"""
+Discord bot developed by Xiao under GPLv3 license.
+All the bot commands and routines are writen here.
+TODO:
+    Maybe add support for different servers.
+    Allow the user to assign a specific channel and not make it "hardcoded".
+    Add weekly affixes routine
+
+"""
+
 import asyncio
 import os
-from datetime import datetime
-
 import discord
 
 from dotenv import load_dotenv
@@ -19,11 +27,20 @@ bot = commands.Bot(command_prefix='$', description='Im just a bot', owner_id=124
 
 @bot.event
 async def on_ready():
+    """
+    Simple function to know when the bot is online.
+    :return:
+    """
     print('Bot logged in!')
 
 
 @bot.event
 async def on_member_join(member):
+    """
+    Function that is triggered whenever someone joins the server and sends the new user a welcome message
+    :param member:
+    :return:
+    """
     await member.create_dm()
     await member.dm_channel.send(
         f'Hello there {member.name}, welcome to the server!')
@@ -35,14 +52,21 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send('Argument is missing!')
     elif isinstance(error, commands.CommandInvokeError):
-        await ctx.send('Please insert other thing, that one did not work, 
-        if the problem persists, go bother Xiao about it')
+        await ctx.send(
+            'Please insert other thing, that one did not work, if the problem persists, go bother Xiao about it')
     else:
-        await ctx.send('An unexpected error has ocurred go bother Xiao about it')"""
+        await ctx.send('An unexpected error has ocurred go bother Xiao about it')
+"""
 
 
 @bot.command()
 async def commands(ctx):
+    """
+    Public function that works as command.
+    Shows the bot public commands
+    :param ctx:
+    :return:
+    """
     embed = discord.Embed(color=0x3a51cc)
     embed.set_author(
         name=f'HazzikostasBot commands', url='https://github.com/adrianvillanueva997/HazzikostasBot',
@@ -60,6 +84,12 @@ async def commands(ctx):
 
 @bot.command(pass_context=True)
 async def register(ctx, arg):
+    """
+    "Private" command that allows a user to register his character in the database for Mythic scores tracking
+    :param ctx:
+    :param arg:
+    :return:
+    """
     tm = ToonManagement.ToonManagement()
     status = tm.insert_toon(arg, ctx.author.id, ctx.author.name)
     if status == 0:
@@ -71,6 +101,11 @@ async def register(ctx, arg):
 
 @bot.command(pass_context=True)
 async def show(ctx):
+    """
+    Public command that shows the current registered users in the system
+    :param ctx:
+    :return:
+    """
     tm = ToonManagement.ToonManagement()
     toons = tm.get_toons_names()
     embed = discord.Embed(title='Characters registered', description='To add or remove a character ask Poki or Xiao',
@@ -85,6 +120,12 @@ async def show(ctx):
 
 @bot.command(pass_context=True)
 async def info(ctx, arg):
+    """
+    Public command that shows stats given a character name, the data is gathered from Blizzard's API
+    :param ctx:
+    :param arg:
+    :return:
+    """
     w = WowStuff.wow_api()
     arg = str(arg).lower()
     toon_basic_data = w.get_character_basic_info(arg)
@@ -136,6 +177,12 @@ async def info(ctx, arg):
 
 @bot.command(pass_context=True)
 async def delete(ctx, arg):
+    """
+    Private command that allows to delete all the info related to a character in the database
+    :param ctx:
+    :param arg:
+    :return:
+    """
     tm = ToonManagement.ToonManagement()
     tm.delete_toon(arg)
     await ctx.send(f'Toon {arg} deleted from the system.')
@@ -143,6 +190,11 @@ async def delete(ctx, arg):
 
 @bot.command(pass_context=True)
 async def affixes(ctx):
+    """
+    Public command to get the weekly affixes manually
+    :param ctx:
+    :return:
+    """
     r = WowStuff.raider_api()
     affix_data = r.get_affixes()
     embed = discord.Embed(color=0x3a51cc)
@@ -154,88 +206,102 @@ async def affixes(ctx):
     await ctx.send(embed=embed)
 
 
-async def update():
+async def mythic_score_update():
+    """
+    Function that checks every registered character and updates its information if something changed and sends a message
+    for each character that new data.
+    :return:
+    """
     tm = ToonManagement.ToonManagement()
-    client = bot.get_channel(int(os.getenv("channel_id")))
+    client = bot.get_channel(int(os.getenv("mythic_channel_id")))
     r = WowStuff.raider_api()
     w = WowStuff.wow_api()
     toons_data = tm.get_toons_full_data()
     for i in range(0, len(toons_data['toons'])):
-        player_data = r.get_player_mythic_stats(toons_data['toons'][i])
-        _all = player_data['mythic_plus_scores_by_season'][0]['scores']['all']
-        dps = player_data['mythic_plus_scores_by_season'][0]['scores']['dps']
-        healer = player_data['mythic_plus_scores_by_season'][0]['scores']['healer']
-        tank = player_data['mythic_plus_scores_by_season'][0]['scores']['tank']
-        spec_0 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_0']
-        spec_1 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_1']
-        spec_2 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_2']
-        spec_3 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_3']
-        rank_overall = player_data['mythic_plus_ranks']['overall']['realm']
-        rank_class = player_data['mythic_plus_ranks']['class']['realm']
-        rank_faction = player_data['mythic_plus_ranks']['faction_overall']['realm']
-        if (_all != toons_data['all'][i] or (dps != toons_data['dps'][i]) or (healer != toons_data['healer'][i])
-                or (tank != toons_data['tank'][i]) or (spec_0 != toons_data['spec_0'][i])
-                or (spec_1 != toons_data['spec_1'][i]) or (spec_2 != toons_data['spec_2'][i])
-                or (spec_3 != toons_data['spec_3'][i])):
-            tm.update_toon_info(toons_data['toons'][i], _all, dps, healer, tank, spec_0, spec_1, spec_2, spec_3,
-                                rank_overall, rank_class, rank_faction)
-            print(f'updating {player_data["name"]}')
-            all_diff = _all - toons_data['all'][i]
-            dps_diff = dps - toons_data['dps'][i]
-            healer_diff = healer - toons_data['healer'][i]
-            tank_diff = tank - toons_data['tank'][i]
-            spec_0_diff = spec_0 - toons_data['spec_0'][i]
-            spec_1_diff = spec_1 - toons_data['spec_1'][i]
-            spec_2_diff = spec_2 - toons_data['spec_2'][i]
-            spec_3_diff = spec_3 - toons_data['spec_3'][i]
-            rank_ov_diff = rank_overall - toons_data['overall'][i]
-            rank_fac_diff = rank_faction - toons_data['faction'][i]
-            rank_class_diff = rank_class - toons_data['class'][i]
-            embed = discord.Embed(color=0x3a51cc, title=f"{player_data['name']}"
-                                                        f"{player_data['active_spec_name']} {player_data['class']}")
-            toon_media = w.get_character_media(player_data['name'][i])
-            if 'avatar_url' in toon_media:
-                embed.set_thumbnail(url=toon_media['avatar_url'])
-            embed.add_field(name='Mythic+ Score', value=f"{_all} ({sign(all_diff)}{all_diff})",
-                            inline=False)
-            embed.add_field(name="Role Scores", value="\u200b", inline=False)
-            embed.add_field(name='DPS', value=f"{dps} ({sign(dps_diff)}{dps_diff})",
-                            inline=True)
-            embed.add_field(name='Tank', value=f"{tank} ({sign(tank_diff)}{tank_diff})", inline=True)
-            embed.add_field(name='Heal',
-                            value=f"{healer} ({sign(healer_diff)}{healer_diff})",
-                            inline=True)
-            embed.add_field(name="Specs Scores", value="\u200b", inline=False)
-            embed.add_field(name='Spec 1',
-                            value=f"{spec_0} ({sign(spec_0_diff)}{spec_0_diff})",
-                            inline=True)
-            embed.add_field(name='Spec 2',
-                            value=f"{spec_1} ({sign(spec_1_diff)}{spec_1_diff})",
-                            inline=True)
-            embed.add_field(name='Spec 3',
-                            value=f"{spec_2} ({sign(spec_2_diff)}{spec_2_diff})",
-                            inline=True)
-            embed.add_field(name='Spec 4',
-                            value=f"{spec_3} ({sign(spec_3_diff)}{spec_3_diff})",
-                            inline=True)
-            embed.add_field(name="Realm rankings", value="\u200b", inline=False)
-            embed.add_field(name='Realm',
-                            value=f"{rank_overall} ({sign(rank_ov_diff)}{rank_ov_diff})"
-                            , inline=True)
-            embed.add_field(name='Faction',
-                            value=f"{rank_faction} ({sign(rank_fac_diff)}{rank_fac_diff})"
-                            , inline=True)
-            embed.add_field(name='Class',
-                            value=f"{rank_class} ({sign(rank_class_diff)}{rank_class_diff})"
-                            , inline=True)
-            embed.set_footer(text='Data fetched from raider.io',
-                             icon_url='https://cdnassets.raider.io/images/brand/Icon_BlackOnWhite.png')
-            await client.send(embed=embed)
+        try:
+            player_data = r.get_player_mythic_stats(toons_data['toons'][i])
+            _all = player_data['mythic_plus_scores_by_season'][0]['scores']['all']
+            dps = player_data['mythic_plus_scores_by_season'][0]['scores']['dps']
+            healer = player_data['mythic_plus_scores_by_season'][0]['scores']['healer']
+            tank = player_data['mythic_plus_scores_by_season'][0]['scores']['tank']
+            spec_0 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_0']
+            spec_1 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_1']
+            spec_2 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_2']
+            spec_3 = player_data['mythic_plus_scores_by_season'][0]['scores']['spec_3']
+            rank_overall = player_data['mythic_plus_ranks']['overall']['realm']
+            rank_class = player_data['mythic_plus_ranks']['class']['realm']
+            rank_faction = player_data['mythic_plus_ranks']['faction_overall']['realm']
+            if (_all != toons_data['all'][i] or (dps != toons_data['dps'][i]) or (healer != toons_data['healer'][i])
+                    or (tank != toons_data['tank'][i]) or (spec_0 != toons_data['spec_0'][i])
+                    or (spec_1 != toons_data['spec_1'][i]) or (spec_2 != toons_data['spec_2'][i])
+                    or (spec_3 != toons_data['spec_3'][i])):
+                tm.update_toon_info(toons_data['toons'][i], _all, dps, healer, tank, spec_0, spec_1, spec_2, spec_3,
+                                    rank_overall, rank_class, rank_faction)
+                print(f'updating {player_data["name"]}')
+                all_diff = _all - toons_data['all'][i]
+                dps_diff = dps - toons_data['dps'][i]
+                healer_diff = healer - toons_data['healer'][i]
+                tank_diff = tank - toons_data['tank'][i]
+                spec_0_diff = spec_0 - toons_data['spec_0'][i]
+                spec_1_diff = spec_1 - toons_data['spec_1'][i]
+                spec_2_diff = spec_2 - toons_data['spec_2'][i]
+                spec_3_diff = spec_3 - toons_data['spec_3'][i]
+                rank_ov_diff = rank_overall - toons_data['overall'][i]
+                rank_fac_diff = rank_faction - toons_data['faction'][i]
+                rank_class_diff = rank_class - toons_data['class'][i]
+                embed = discord.Embed(color=0x3a51cc,
+                                      title=f"{player_data['name']} {player_data['active_spec_name']} {player_data['class']}",
+                                      url=player_data['profile_url'])
+                toon_media = w.get_character_media(player_data['name'])
+                if 'avatar_url' in toon_media:
+                    embed.set_thumbnail(url=toon_media['avatar_url'])
+                embed.add_field(name='Mythic+ Score', value=f"{_all} ({sign(all_diff)}{all_diff})",
+                                inline=False)
+                embed.add_field(name="Role Scores", value="\u200b", inline=False)
+                embed.add_field(name='DPS', value=f"{dps} ({sign(dps_diff)}{dps_diff})",
+                                inline=True)
+                embed.add_field(name='Tank', value=f"{tank} ({sign(tank_diff)}{tank_diff})", inline=True)
+                embed.add_field(name='Heal',
+                                value=f"{healer} ({sign(healer_diff)}{healer_diff})",
+                                inline=True)
+                embed.add_field(name="Specs Scores", value="\u200b", inline=False)
+                embed.add_field(name='Spec 1',
+                                value=f"{spec_0} ({sign(spec_0_diff)}{spec_0_diff})",
+                                inline=True)
+                embed.add_field(name='Spec 2',
+                                value=f"{spec_1} ({sign(spec_1_diff)}{spec_1_diff})",
+                                inline=True)
+                embed.add_field(name='Spec 3',
+                                value=f"{spec_2} ({sign(spec_2_diff)}{spec_2_diff})",
+                                inline=True)
+                embed.add_field(name='Spec 4',
+                                value=f"{spec_3} ({sign(spec_3_diff)}{spec_3_diff})",
+                                inline=True)
+                embed.add_field(name="Realm rankings", value="\u200b", inline=False)
+                embed.add_field(name='Realm',
+                                value=f"{rank_overall} ({sign(rank_ov_diff)}{rank_ov_diff})"
+                                , inline=True)
+                embed.add_field(name='Faction',
+                                value=f"{rank_faction} ({sign(rank_fac_diff)}{rank_fac_diff})"
+                                , inline=True)
+                embed.add_field(name='Class',
+                                value=f"{rank_class} ({sign(rank_class_diff)}{rank_class_diff})"
+                                , inline=True)
+                embed.set_footer(text='Data fetched from raider.io',
+                                 icon_url='https://cdnassets.raider.io/images/brand/Icon_BlackOnWhite.png')
+                await client.send(embed=embed)
+        except Exception as e:
+            print(e)
         else:
             print('Not updating')
 
 
 def sign(a: float):
+    """
+    I needed to do this thing to show a + symbol if the number is positive lol
+    :param a:
+    :return:
+    """
     if a > 0:
         return "+"
     else:
@@ -243,14 +309,22 @@ def sign(a: float):
 
 
 @bot.event
-async def mythic_update():
+async def mythic_score_routine():
+    """
+    Mythic score update routine, it creates a thread that executes the mythic_update function every 6 hours
+    :return:
+    """
     await bot.wait_until_ready()
     print('Automatic mythic update task ready')
     while bot.is_ready():
-        await update()
+        await mythic_score_update()
         await asyncio.sleep(21600)  # task runs every 6 hours
 
 
 if __name__ == '__main__':
-    bot.loop.create_task(mythic_update())
+    # I added this environment variable to be able to do changes without having to stop the production process.
+    # Unless it is a bugfix or something critical the new bot commands / features will be rolled into production
+    # In any of the 6H routine interval.
+    if os.getenv("branch") != 'development':
+        bot.loop.create_task(mythic_score_routine())
     bot.run(os.getenv("token"))
