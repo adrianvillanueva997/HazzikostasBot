@@ -11,6 +11,7 @@ TODO:
 import asyncio
 import os
 import discord
+import datetime as dt
 
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
@@ -77,7 +78,6 @@ async def commands(ctx):
     embed.add_field(name='$show', value='Shows a list of tracked toons for mythic stuff.', inline=False)
     embed.add_field(name='$info', value='Shows some basic stuff about a character in wyrmrest accord realm.',
                     inline=False)
-    embed.add_field(name='$affixes', value='Weekly affixes.', inline=False)
 
     await ctx.send(embed=embed)
 
@@ -188,8 +188,7 @@ async def delete(ctx, arg):
     await ctx.send(f'Toon {arg} deleted from the system.')
 
 
-@bot.command(pass_context=True)
-async def affixes(ctx):
+async def get_weekly_affixes():
     """
     Public command to get the weekly affixes manually
     :param ctx:
@@ -197,13 +196,15 @@ async def affixes(ctx):
     """
     r = WowStuff.raider_api()
     affix_data = r.get_affixes()
+    client = bot.get_channel(int(os.getenv("affixes_channel_id")))
     embed = discord.Embed(color=0x3a51cc)
-    embed.set_author(name=f'Weekly affixes', url=affix_data['leaderboard_url'])
+    embed.set_author(name=f'Weekly affixes ({dt.datetime.now().month}/{dt.datetime.now().day}/{dt.datetime.now().year})'
+                     , url=affix_data['leaderboard_url'])
     for affix in affix_data['affix_details']:
         embed.add_field(name=affix["name"], value=affix["description"], inline=False)
     embed.set_footer(text='Data fetched from raider.io',
                      icon_url='https://cdnassets.raider.io/images/brand/Icon_BlackOnWhite.png')
-    await ctx.send(embed=embed)
+    await client.send(embed=embed)
 
 
 async def mythic_score_update():
@@ -315,10 +316,27 @@ async def mythic_score_routine():
     :return:
     """
     await bot.wait_until_ready()
-    print('Automatic mythic update task ready')
+    print('[INFO] Mythic Ccores routine loaded.')
     while bot.is_ready():
         await mythic_score_update()
+        print('[INFO] Mythic scores update finished')
         await asyncio.sleep(21600)  # task runs every 6 hours
+
+
+@bot.event
+async def affixes_weekly_routine():
+    await bot.wait_until_ready()
+    print('[INFO] Affixes routine loaded.')
+    posted = 0
+    while bot.is_ready():
+        if dt.date.today().isoweekday() == 2 and dt.datetime.now().hour == 18 and dt.datetime.now().minute == 0:
+            if posted == 0:
+                await get_weekly_affixes()
+                posted = 1
+                print('[INFO] Affixes posted!')
+        else:
+            await asyncio.sleep(60)
+            posted = 0
 
 
 if __name__ == '__main__':
@@ -327,4 +345,5 @@ if __name__ == '__main__':
     # In any of the 6H routine interval.
     if os.getenv("branch") != 'development':
         bot.loop.create_task(mythic_score_routine())
+        bot.loop.create_task(affixes_weekly_routine())
     bot.run(os.getenv("token"))
