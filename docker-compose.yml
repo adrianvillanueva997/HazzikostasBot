@@ -1,0 +1,17 @@
+version: '3'
+services:
+  bot:
+    restart: unless-stopped
+    container_name: discord_hazzikostas
+    image: hazzikostas_bot
+    networks:
+      - bots
+      - backend
+networks:
+  bots:
+    external: true
+  backend:
+    external: true
+
+
+
