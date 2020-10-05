@@ -46,7 +46,7 @@ jobs:
         with:
             use-pylint: false
             use-pycodestyle: false #this is annoying as fuck
-            use-flake8: true
+            use-flake8: false
             use-black: false
             use-mypy: false
             use-isort: false
