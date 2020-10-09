@@ -90,4 +90,4 @@ config.json
 # Editor-based HTTP Client requests
 /httpRequests/
 /.idea
-
+./config.json
