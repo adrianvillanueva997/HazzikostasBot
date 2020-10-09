@@ -6,12 +6,11 @@ services:
     image: discord_hazzikostas
     networks:
       - bots
-      - backend
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    environment:
+      - TZ=Europe/Madrid
 networks:
   bots:
     external: true
-  backend:
-    external: true
-
-
-
