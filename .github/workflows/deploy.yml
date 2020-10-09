@@ -37,19 +37,6 @@ jobs:
       # the head of the pull request instead of the merge commit.
       - run: git checkout HEAD^2
         if: ${{ github.event_name == 'pull_request' }}
-      - name: Lint code
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.8"
-      - name: lint
-        uses: ricardochaves/python-lint@v1.3.0
-        with:
-            use-pylint: false
-            use-pycodestyle: false #this is annoying as fuck
-            use-flake8: false
-            use-black: false
-            use-mypy: false
-            use-isort: false
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
@@ -61,3 +48,18 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
+      - name: Remote deployment
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        port: ${{ secrets.PORT }}
+        key: ${{ secrets.KEY }}
+        username: ${{ secrets.USERNAME }}
+        script: |
+          cd HazzikostasBot
+          docker-compose down
+          docker image rm discord_hazzikostas
+          git pull origin master
+          docker build -t discord_hazzikostas .
+          docker rmi $(docker images -f "dangling=true" -q)
+          docker-compose up -d
