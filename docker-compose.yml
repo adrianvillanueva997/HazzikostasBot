@@ -2,8 +2,8 @@ version: '3'
 services:
   bot:
     restart: unless-stopped
-    container_name: discord_hazzikostas
-    image: hazzikostas_bot
+    container_name: hazzikostas_bot_PROD
+    image: discord_hazzikostas
     networks:
       - bots
       - backend
