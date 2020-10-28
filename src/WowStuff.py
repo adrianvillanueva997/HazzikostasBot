@@ -2,7 +2,7 @@ import requests
 import json
 
 
-class wow_api:
+class WowApi:
     """
     Public class that connects to the official Blizzard API
     """
@@ -17,7 +17,8 @@ class wow_api:
         self.realm_id = '1369'
         self.__token = self.__login()
 
-    def __login(self):
+    @staticmethod
+    def __login():
         """
         Private function that logs in the Blizzard's API and gets the login token that is needed to get information
         from the API
@@ -69,7 +70,7 @@ class wow_api:
         return re.json()
 
 
-class raider_api:
+class RaiderApi:
     """
     Public class that connects to raider.io API
     """
