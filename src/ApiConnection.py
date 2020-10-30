@@ -7,6 +7,8 @@ import os
 
 class ApiConnection:
     def __init__(self):
+        self.__username = os.getenv("api_user")
+        self.__code = os.getenv("api_password")
         pass
 
     @staticmethod
@@ -29,12 +31,11 @@ class ApiConnection:
         except Exception as e:
             print(e)
 
-    @staticmethod
-    def register(character_name, region, realm) -> Tuple[bool, int]:
+    def register(self, character_name, region, realm) -> Tuple[bool, int]:
         try:
             r = requests.post("https://hazzikostas.thexiao77.xyz/api/v1/createcharacter", params={
-                'username': os.getenv('api_user'),
-                'password': os.getenv('api_password'),
+                'username': self.__username,
+                'password': self.__code,
                 'character': character_name,
                 'region': region,
                 'realm': realm
@@ -47,12 +48,11 @@ class ApiConnection:
         except Exception as e:
             print(e)
 
-    @staticmethod
-    def delete(character_name) -> Tuple[bool, int]:
+    def delete(self, character_name) -> Tuple[bool, int]:
         try:
             r = requests.delete("https://hazzikostas.thexiao77.xyz/api/v1/deletecharacter", params={
-                'username': os.getenv('api_user'),
-                'password': os.getenv('api_password'),
+                'username': self.__username,
+                'password': self.__code,
                 'character': character_name,
             })
             if r.status_code == 200:
@@ -63,12 +63,11 @@ class ApiConnection:
         except Exception as e:
             print(e)
 
-    @staticmethod
-    def update_post_status(character_name) -> Tuple[bool, int]:
+    def update_post_status(self, character_name) -> Tuple[bool, int]:
         try:
             r = requests.post("https://hazzikostas.thexiao77.xyz/api/v1/updatecharacter", params={
-                'username': os.getenv('api_user'),
-                'password': os.getenv('api_password'),
+                'username': self.__username,
+                'password': self.__code,
                 'character': character_name,
             })
             if r.status_code == 200:
