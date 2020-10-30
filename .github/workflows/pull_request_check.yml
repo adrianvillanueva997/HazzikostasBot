@@ -6,7 +6,8 @@
 name: "Deployment"
 
 on:
-  push:
+  pull_request:
+    # The branches below must be a subset of the branches above
     branches: [ master ]
 
 jobs:
@@ -45,18 +46,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
-      - name: Remote deployment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          port: ${{ secrets.PORT }}
-          key: ${{ secrets.KEY }}
-          username: ${{ secrets.USERNAME }}
-          script: |
-            cd HazzikostasBot
-            docker-compose down
-            docker image rm discord_hazzikostas
-            git pull origin master
-            docker build -t discord_hazzikostas .
-            docker rmi $(docker images -f "dangling=true" -q)
-            docker-compose up -d
