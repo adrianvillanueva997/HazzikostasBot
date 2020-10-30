@@ -221,7 +221,7 @@ async def mythic_score_update():
     for each character that new data.
     :return:
     """
-    client = bot.get_channel(int(os.getenv("test_channel")))
+    client = bot.get_channel(int(os.getenv("mythic_channel_id")))
     api = ApiConnection.ApiConnection()
     characters = api.get_post_characters()
     for character in characters:
@@ -312,7 +312,7 @@ async def mythic_score_routine():
     print('[INFO] Mythic Scores routine loaded.')
     posted = 0
     while bot.is_ready():
-        if ((dt.datetime.now().hour == 12 and dt.datetime.now().minute == 0) or
+        if ((dt.datetime.now().hour == 12 and dt.datetime.now().minute == 7) or
                 (dt.datetime.now().hour == 18 and dt.datetime.now().minute == 0) or
                 (dt.datetime.now().hour == 0 and dt.datetime.now().minute == 0) or
                 (dt.datetime.now().hour == 6 and dt.datetime.now().minute == 0)):
