@@ -312,10 +312,10 @@ async def mythic_score_routine():
     print('[INFO] Mythic Scores routine loaded.')
     posted = 0
     while bot.is_ready():
-        if ((dt.datetime.now().hour == 12 and dt.datetime.now().minute == 7) or
-                (dt.datetime.now().hour == 18 and dt.datetime.now().minute == 0) or
-                (dt.datetime.now().hour == 0 and dt.datetime.now().minute == 0) or
-                (dt.datetime.now().hour == 6 and dt.datetime.now().minute == 0)):
+        if ((dt.datetime.now().hour == 11 and dt.datetime.now().minute == 0) or
+                (dt.datetime.now().hour == 17 and dt.datetime.now().minute == 0) or
+                (dt.datetime.now().hour == 23 and dt.datetime.now().minute == 0) or
+                (dt.datetime.now().hour == 5 and dt.datetime.now().minute == 0)):
             if posted == 0:
                 posted = 1
                 await mythic_score_update()
