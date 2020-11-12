@@ -6,7 +6,7 @@ discord.py==1.5.1
 idna==2.10
 multidict==5.0.0
 python-dotenv==0.15.0
-requests==2.24.0
+requests==2.25.0
 urllib3==1.25.11
 websockets==8.1
 yarl==1.6.2
